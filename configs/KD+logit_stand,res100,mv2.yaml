@@ -1,0 +1,33 @@
+EXPERIMENT:
+  NAME: "KD+logit stand+TLoss,res100,mv2"
+  TAG: "KD+logit stand,res100,mv2"
+  PROJECT: "face_recognition distillation"
+  LOG_DIR: "./logs/"
+DISTILLER:
+  TYPE: "KD+logit stand+TLoss"
+  CLASS: "KD"
+  USE_TLOSS: True
+  TEACHER: "ResNet100"
+  STUDENT: "MobileNetV2"
+DATASET:
+  NAME: "MS1MV2"
+  DATA_DIR: "/data/tx/MS1MV2"
+  BATCH_SIZE: 256
+  NUM_WORKERS: 4
+  NUM_CLASSES: 85742
+  NUM_IMAGES: 5822653
+SOLVER:
+  TEACHER_PTH: "./models/data/res100_backbone.pth"
+  EPOCHS: 60
+  BASE_LR: 0.1
+  LR_DECAY_STAGES: [10, 19, 23, 32, 41, 50]
+  LR_DECAY_RATE: 0.1
+  WEIGHT_DECAY: 0.0005
+  MOMENTUM: 0.9
+  FP16: True
+  TYPE: "SGD"
+  TRAINER: "ours"
+RESUME:
+  IS_RESUME: False
+  RESUME_EPOCH: 0
+  RESUME_PATH: "./models/train_data/"
