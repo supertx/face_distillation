@@ -1,4 +1,6 @@
 import gc
+import os.path
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -60,21 +62,28 @@ class Distiller(nn.Module):
         # 初始化时将所有的教师的logit都保存下来，防止之后每一个epoch都重复计算
         # TODO 将教师的logit保存到文件中，下次直接读取
         if cfg.PRELOAD_TEACHER_LOGIT:
-            t = tqdm(total=len(loader), desc="Preload teacher logit", ncols=100)
-            with torch.no_grad():
-                for i, (img, flip_img) in enumerate(loader):
-                    # 将512个数据拼成一个tensor，然后一次性计算
-                    # batch = torch.stack([dataset[i + j][1] for j in
-                    #                      range(preload_batch)]).cuda() if self.teacher.cuda() else torch.tensor(
-                    #     [dataset[i + j][1] for j in range(preload_batch)])
-                    self.teacher_logit.extend(
-                        [item.squeeze(0) for item in model(img.cuda()).cpu().chunk(preload_batch)])
-                    del img
-                    self.teacher_flip_logit.extend(
-                        [item.squeeze(0) for item in model(flip_img.cuda()).cpu().chunk(preload_batch)])
-                    del flip_img
-                    t.update(1)
-            t.close()
+            if os.path.isfile(f"./models/data/{cfg.EXPRIMENT.NAME}_teacher_logits.pth"):
+                stack = torch.load(f"./models/data/{cfg.EXPRIMENT.NAME}_teacher_logits.pth")
+                self.teacher_logit = stack[0].tolist()
+                self.teacher_flip_logit = stack[1].tolist()
+            else:
+                t = tqdm(total=len(loader), desc="Preload teacher logit", ncols=100)
+                with torch.no_grad():
+                    for i, (img, flip_img) in enumerate(loader):
+                        # 将512个数据拼成一个tensor，然后一次性计算
+                        # batch = torch.stack([dataset[i + j][1] for j in
+                        #                      range(preload_batch)]).cuda() if self.teacher.cuda() else torch.tensor(
+                        #     [dataset[i + j][1] for j in range(preload_batch)])
+                        self.teacher_logit.extend(
+                            [item.squeeze(0) for item in model(img.cuda()).cpu().chunk(preload_batch)])
+                        del img
+                        self.teacher_flip_logit.extend(
+                            [item.squeeze(0) for item in model(flip_img.cuda()).cpu().chunk(preload_batch)])
+                        del flip_img
+                        t.update(1)
+                    stack = torch.stack([torch.tensor(self.teacher_logit), torch.tensor(self.teacher_flip_logit)])
+                    torch.save(stack, f"./models/data/{cfg.EXPRIMENT.NAME}_teacher_logits.pth")
+                t.close()
 
         if self.preload:
             del model

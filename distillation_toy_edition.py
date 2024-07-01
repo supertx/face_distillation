@@ -85,7 +85,7 @@ def train(distiller, dataloader, cfg, amp, t_loss=None):
                 optimizer.zero_grad()
                 img = img.cuda()
                 # label = label.cuda()
-                logits_t, logits_s, loss_dict = distiller(index=index, image=img, flip_flag=flip_flag, target=None)
+                logits_t, logits_s, loss_dict = distiller(index=index, image=img, flip_flag=flip_flag)
 
                 loss = loss_dict.sum()
                 if t_loss is not None:
@@ -156,7 +156,7 @@ def main(args, cfg):
     logging.info(f'teacher network: {cfg.DISTILLER.TEACHER}')
     logging.info(f'student network: {cfg.DISTILLER.STUDENT}')
     # dist.init_process_group("nccl", rank=rank, world_size=cfg.DDP.WORLD_SIZE)
-    teacher_model = iresnet100(fp16=cfg.SOLVER.FP16)
+    teacher_model = iresnet50(fp16=cfg.SOLVER.FP16)
     student_model = get_mbf(True, 512, blocks=(1, 4, 6, 2), scale=2)
     print_config(cfg)
     teacher_model.load_state_dict(torch.load(cfg.SOLVER.TEACHER_PTH))
@@ -181,7 +181,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='distillation')
     parser.add_argument('--config',
-                        default="./configs/KD+logit_stand,res100,mv2.yaml", type=str, help='config file')
+                        default="./configs/KD+logit_stand,res50,mv2.yaml", type=str, help='config file')
+
     args = parser.parse_args()
     cfg = get_config(args.config)
     # mp.spawn(main, args=(args, cfg), nprocs=cfg.DDP.WORLD_SIZE)

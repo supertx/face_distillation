@@ -30,7 +30,7 @@ class KD(Distiller):
         self.kd_loss_weight = cfg.KD.LOSS.KD_WEIGHT
         self.logit_stand = cfg.EXPERIMENT.LOGIT_STAND 
 
-    def forward_train(self, index, image, flip_flag, target, **kwargs):
+    def forward_train(self, index, image, flip_flag, **kwargs):
         logits_student = self.student(image)
         if self.preload:
             logits_teacher = torch.stack([self.teacher_logit[i] if not flag else self.teacher_flip_logit[i] for i, flag in zip(index, flip_flag)]).cuda()
